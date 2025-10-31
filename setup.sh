@@ -73,13 +73,13 @@ setup_client() {
         exit 1
     fi
 
-    echo -e "${YELLOW}Menginstal paket WireGuard...${NC}"
+    echo -e "${YELLOW}Menginstal paket WireGuard dan dependensi (resolvconf)...${NC}"
     if command -v apt-get &> /dev/null; then
-        apt-get update && apt-get install -y wireguard
+        apt-get update && apt-get install -y wireguard openresolv
     elif command -v dnf &> /dev/null; then
-        dnf install -y epel-release && dnf install -y wireguard-tools
+        dnf install -y epel-release && dnf install -y wireguard-tools openresolv
     elif command -v yum &> /dev/null; then
-        yum install -y epel-release && yum install -y wireguard-tools
+        yum install -y epel-release && yum install -y wireguard-tools openresolv
     else
         echo -e "${RED}Distro Linux tidak didukung. Silakan instal WireGuard secara manual.${NC}"
         exit 1
