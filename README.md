@@ -1,126 +1,63 @@
-# Script Bypass IP VPS dengan WireGuard
+# Skrip Bypass IP VPS dengan WireGuard (Serba Otomatis)
 
 ## Pendahuluan
 
-Skrip dan panduan ini bertujuan untuk mengalihkan (me-routing) semua lalu lintas internet dari sebuah VPS di luar negeri (**VPS-LN**) melalui VPS yang berlokasi di Indonesia (**VPS-ID**). Hasilnya, semua koneksi yang keluar dari VPS-LN akan terlihat menggunakan alamat IP publik milik VPS-ID.
+Skrip ini menyediakan cara yang sepenuhnya otomatis untuk mengalihkan lalu lintas internet dari sebuah VPS di luar negeri (**VPS-LN**) melalui VPS yang berlokasi di Indonesia (**VPS-ID**). Hasilnya, semua koneksi yang keluar dari VPS-LN akan terlihat menggunakan alamat IP publik milik VPS-ID.
 
-Metode yang digunakan adalah VPN tunnel menggunakan **WireGuard**, yang dikenal sangat cepat, modern, dan memiliki performa tinggi.
+Proses ini diotomatiskan melalui sebuah skrip menu interaktif (`setup.sh`).
 
 ## Arsitektur
 
 Anda memerlukan **dua** server VPS untuk menerapkan konfigurasi ini:
 
-1.  **VPS-ID (Server Indonesia)**:
-    *   Berperan sebagai **Server VPN** atau "Pintu Keluar" (Exit Node).
-    *   Alamat IP publik dari server inilah yang akan digunakan.
-2.  **VPS-LN (Server Luar Negeri)**:
-    *   Berperan sebagai **Klien VPN**.
-    *   Semua lalu lintas internet dari server ini akan dialihkan melalui VPS-ID.
+1.  **VPS-ID (Server Indonesia)**: Berperan sebagai **Server VPN** atau "Pintu Keluar" (Exit Node).
+2.  **VPS-LN (Server Luar Negeri)**: Berperan sebagai **Klien VPN**.
 
 ---
 
-## Langkah-Langkah Instalasi
+## Cara Penggunaan
 
-### Langkah 1: Konfigurasi Server di VPS Indonesia
+Cara termudah adalah dengan mengkloning (clone) seluruh repositori ini ke kedua VPS Anda.
 
-Login ke **VPS Indonesia** Anda melalui SSH, lalu ikuti perintah di bawah ini.
+**1. Klon Repositori**
 
-**1. Unduh Skrip Instalasi**
-
-Skrip ini akan mengotomatisasi seluruh proses instalasi server WireGuard.
+Gunakan perintah `git` untuk mengunduh semua file yang diperlukan.
 ```bash
-wget -O wireguard.sh https://get.vpnsetup.net/wg
+# Ganti URL_REPOSITORI dengan URL repositori ini yang sebenarnya
+git clone URL_REPOSITORI
+cd NAMA_DIREKTORI_HASIL_CLONE
 ```
 
-**2. Jadikan Skrip Dapat Dieksekusi**
+**2. Jalankan Skrip**
+
+Setelah masuk ke direktori repositori, jalankan skrip `setup.sh` dengan `sudo` di setiap VPS dan ikuti menu yang ditampilkan.
 ```bash
-chmod +x wireguard.sh
-```
-
-**3. Jalankan Instalasi Otomatis**
-
-Jalankan skrip dengan mode otomatis. Anda perlu menjalankannya sebagai `root` atau menggunakan `sudo`.
-```bash
-sudo ./wireguard.sh --auto
-```
-Setelah instalasi selesai, skrip akan secara otomatis membuat file konfigurasi untuk klien pertama, yang biasanya disimpan di lokasi seperti `/home/ubuntu/client.conf` atau `/root/client.conf`.
-
-**4. Lihat dan Salin Konfigurasi Klien**
-
-Buka file konfigurasi klien dan salin seluruh isinya. Anda akan membutuhkannya untuk konfigurasi di VPS Luar Negeri.
-```bash
-sudo cat /home/ubuntu/client.conf
-# atau jika Anda root
-cat client.conf
+sudo ./setup.sh
 ```
 
 ---
 
-### Langkah 2: Konfigurasi Klien di VPS Luar Negeri
+### Langkah 1: Di VPS Indonesia (Server)
 
-Login ke **VPS Luar Negeri** Anda melalui SSH, lalu ikuti langkah-langkah berikut.
+1.  Jalankan `sudo ./setup.sh`.
+2.  Pilih opsi **1** untuk **Konfigurasi sebagai Server**.
+3.  Skrip akan menggunakan installer lokal untuk menginstal server WireGuard secara otomatis.
+4.  Setelah selesai, skrip akan menampilkan isi dari `client.conf`. **Salin dan simpan seluruh konfigurasi ini.** Anda akan membutuhkannya di langkah berikutnya.
 
-**1. Instal Paket WireGuard**
+### Langkah 2: Di VPS Luar Negeri (Klien)
 
-*   **Untuk Ubuntu / Debian:**
-    ```bash
-    sudo apt update
-    sudo apt install wireguard -y
-    ```
-*   **Untuk CentOS / RHEL / Fedora:**
-    ```bash
-    sudo dnf install epel-release -y
-    sudo dnf install wireguard-tools -y
-    ```
+1.  Jalankan `sudo ./setup.sh`.
+2.  Pilih opsi **2** untuk **Konfigurasi sebagai Klien**.
+3.  Skrip akan menginstal paket WireGuard yang diperlukan.
+4.  Selanjutnya, skrip akan meminta Anda untuk menempelkan (paste) konfigurasi `client.conf` yang Anda dapatkan dari VPS Indonesia.
+5.  Tempelkan konfigurasi tersebut, lalu tekan `CTRL+D`.
+6.  Skrip akan menyelesaikan sisa konfigurasi secara otomatis, mengaktifkan koneksi, dan melakukan verifikasi.
 
-**2. Buat File Konfigurasi WireGuard**
+### Langkah 3: Verifikasi
 
-Buat file konfigurasi baru di direktori WireGuard.
-```bash
-sudo nano /etc/wireguard/wg0.conf
-```
-
-**3. Tempel Konfigurasi Klien**
-
-Tempel (paste) seluruh isi file `client.conf` yang telah Anda salin dari VPS Indonesia ke dalam editor `nano`.
-
-Simpan file dan keluar dengan menekan `Ctrl + X`, lalu `Y`, dan `Enter`.
-
-**4. Amankan File Konfigurasi**
-
-Atur hak akses file agar hanya dapat dibaca oleh `root`.
-```bash
-sudo chmod 600 /etc/wireguard/wg0.conf
-```
-
----
-
-### Langkah 3: Menjalankan dan Verifikasi
-
-**1. Aktifkan Koneksi VPN**
-
-Jalankan perintah berikut di **VPS Luar Negeri** untuk memulai tunnel WireGuard.
-```bash
-sudo wg-quick up wg0
-```
-
-**2. (Opsional) Aktifkan Otomatis Saat Booting**
-
-Agar koneksi VPN selalu aktif setiap kali server dinyalakan ulang, jalankan perintah ini:
-```bash
-sudo systemctl enable wg-quick@wg0
-```
-
-**3. Verifikasi Alamat IP**
-
-Untuk memastikan semua lalu lintas sudah dialihkan, cek alamat IP publik Anda dari VPS Luar Negeri.
-```bash
-curl ifconfig.me
-```
-
-Jika konfigurasi berhasil, perintah di atas akan menampilkan **alamat IP dari VPS Indonesia** Anda.
+Setelah konfigurasi klien selesai, skrip akan secara otomatis menampilkan alamat IP publik baru Anda. Jika alamat IP yang ditampilkan adalah milik **VPS Indonesia**, maka setup Anda telah berhasil.
 
 ## Catatan Penting
 
-*   Pastikan port UDP yang digunakan oleh WireGuard (default: `51820`) terbuka di firewall VPS Indonesia Anda. Skrip instalasi biasanya sudah menanganinya secara otomatis.
-*   Kestabilan lingkungan server, terutama di sisi VPS Indonesia, sangat penting. Masalah pada paket manager atau kernel dapat mengganggu instalasi server WireGuard.
+*   Skrip ini perlu dijalankan dengan hak akses `root` atau `sudo`.
+*   File `setup.sh` dan `wireguard-installer.sh` harus berada di direktori yang sama saat dijalankan.
