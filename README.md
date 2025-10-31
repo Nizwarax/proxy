@@ -6,54 +6,65 @@ Skrip ini menyediakan cara yang sepenuhnya otomatis untuk mengalihkan lalu linta
 
 Proses ini diotomatiskan melalui sebuah skrip menu interaktif (`setup.sh`).
 
-## Arsitektur
-
-Anda memerlukan **dua** server VPS untuk menerapkan konfigurasi ini:
-
-1.  **VPS-ID (Server Indonesia)**: Berperan sebagai **Server VPN** atau "Pintu Keluar" (Exit Node).
-2.  **VPS-LN (Server Luar Negeri)**: Berperan sebagai **Klien VPN**.
-
 ---
 
-## Cara Penggunaan
+## Perintah Eksekusi Cepat
 
-Cara termudah adalah dengan mengkloning (clone) seluruh repositori ini ke kedua VPS Anda.
+Ikuti langkah-langkah ini di **kedua** VPS Anda (Indonesia dan Luar Negeri).
 
-**1. Klon Repositori**
+**Langkah 1: Unduh Skrip dari Repositori**
 
-Gunakan perintah `git` untuk mengunduh semua file yang diperlukan.
-```bash
-# Ganti URL_REPOSITORI dengan URL repositori ini yang sebenarnya
-git clone URL_REPOSITORI
-cd NAMA_DIREKTORI_HASIL_CLONE
-```
+Anda perlu menyalin (clone) repositori ini ke dalam VPS Anda.
 
-**2. Jalankan Skrip**
+a. **Salin URL Repositori:**
+   Di halaman web repositori ini, klik tombol hijau bertuliskan **`< > Code`**. Salin URL HTTPS yang muncul. Tampilannya akan seperti `https://github.com/nama-pengguna/nama-repositori.git`.
 
-Setelah masuk ke direktori repositori, jalankan skrip `setup.sh` dengan `sudo` di setiap VPS dan ikuti menu yang ditampilkan.
+b. **Jalankan Perintah `git clone`:**
+   Ganti `URL_YANG_ANDA_SALIN` dengan URL yang baru saja Anda salin, lalu jalankan di terminal VPS Anda.
+   ```bash
+   git clone URL_YANG_ANDA_SALIN
+   ```
+
+c. **Masuk ke Direktori:**
+   Setelah selesai, sebuah direktori baru akan dibuat. Gunakan perintah `ls` untuk melihat namanya, lalu masuk ke direktori tersebut.
+   ```bash
+   # Gunakan 'ls' untuk melihat nama direktori baru
+   ls
+
+   # Ganti NAMA_DIREKTORI dengan nama yang muncul dari perintah ls
+   cd NAMA_DIREKTORI
+   ```
+
+**Langkah 2: Jalankan Skrip**
+
+Setelah berada di dalam direktori yang benar, jalankan skrip dengan perintah di bawah ini. Anda harus menggunakan `sudo` karena skrip ini akan melakukan perubahan pada sistem.
+
 ```bash
 sudo ./setup.sh
 ```
+Skrip akan menampilkan menu. Ikuti alur kerja di bawah ini.
 
 ---
 
-### Langkah 1: Di VPS Indonesia (Server)
+## Alur Kerja Detail
+
+### Di VPS Indonesia (Server)
 
 1.  Jalankan `sudo ./setup.sh`.
 2.  Pilih opsi **1** untuk **Konfigurasi sebagai Server**.
-3.  Skrip akan menggunakan installer lokal untuk menginstal server WireGuard secara otomatis.
-4.  Setelah selesai, skrip akan menampilkan isi dari `client.conf`. **Salin dan simpan seluruh konfigurasi ini.** Anda akan membutuhkannya di langkah berikutnya.
+3.  Skrip akan menginstal server WireGuard secara otomatis.
+4.  Setelah selesai, skrip akan menampilkan isi dari `client.conf`. **Salin dan simpan seluruh konfigurasi ini.** Anda akan membutuhkannya untuk VPS Luar Negeri.
 
-### Langkah 2: Di VPS Luar Negeri (Klien)
+### Di VPS Luar Negeri (Klien)
 
 1.  Jalankan `sudo ./setup.sh`.
 2.  Pilih opsi **2** untuk **Konfigurasi sebagai Klien**.
-3.  Skrip akan menginstal paket WireGuard yang diperlukan.
+3.  Skrip akan menginstal paket WireGuard.
 4.  Selanjutnya, skrip akan meminta Anda untuk menempelkan (paste) konfigurasi `client.conf` yang Anda dapatkan dari VPS Indonesia.
 5.  Tempelkan konfigurasi tersebut, lalu tekan `CTRL+D`.
-6.  Skrip akan menyelesaikan sisa konfigurasi secara otomatis, mengaktifkan koneksi, dan melakukan verifikasi.
+6.  Skrip akan menyelesaikan sisanya secara otomatis dan mengaktifkan koneksi.
 
-### Langkah 3: Verifikasi
+### Verifikasi
 
 Setelah konfigurasi klien selesai, skrip akan secara otomatis menampilkan alamat IP publik baru Anda. Jika alamat IP yang ditampilkan adalah milik **VPS Indonesia**, maka setup Anda telah berhasil.
 
