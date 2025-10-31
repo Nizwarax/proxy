@@ -93,11 +93,11 @@ setup_client() {
     echo -e "${YELLOW}Silakan tempel (paste) isi dari file 'client.conf' Anda.${NC}"
     echo "Tekan CTRL+D setelah selesai menempel."
 
-    # Membuat file temp untuk menyimpan input
-    CONF_CONTENT=$(</dev/stdin)
+    # Membaca input dan menyaringnya untuk menghapus baris yang tidak valid
+    CONF_CONTENT=$(</dev/stdin | grep -E '^\s*(\[|[^=]+=\s*[^[:space:]]+)')
 
     if [ -z "$CONF_CONTENT" ]; then
-        echo -e "${RED}Tidak ada input yang diberikan. Keluar.${NC}"
+        echo -e "${RED}Tidak ada input konfigurasi yang valid terdeteksi. Keluar.${NC}"
         exit 1
     fi
 
