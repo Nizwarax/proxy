@@ -22,7 +22,7 @@ a. **Salin URL Repositori:**
 b. **Jalankan Perintah `git clone`:**
    Ganti `URL_YANG_ANDA_SALIN` dengan URL yang baru saja Anda salin, lalu jalankan di terminal VPS Anda.
    ```bash
-   git clone URL_YANG_ANDA_SALIN
+   git clone https://github.com/Nizwarax/proxy.git
    ```
 
 c. **Masuk ke Direktori:**
@@ -32,7 +32,7 @@ c. **Masuk ke Direktori:**
    ls
 
    # Ganti NAMA_DIREKTORI dengan nama yang muncul dari perintah ls
-   cd NAMA_DIREKTORI
+   cd proxy
    ```
 
 **Langkah 2: Jalankan Skrip**
