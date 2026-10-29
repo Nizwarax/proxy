@@ -1,74 +1,110 @@
-# Skrip Bypass IP VPS dengan WireGuard (Serba Otomatis)
+# WGRouter — Routing VPS via WireGuard (VPS-LN → VPS-ID)
 
-## Pendahuluan
+Routing engine untuk mengarahkan egress sebuah VPS Luar Negeri (**VPS-LN**) melalui VPS Indonesia (**VPS-ID**) via WireGuard — semua koneksi keluar VPS-LN terlihat memakai IP publik VPS-ID.
 
-Skrip ini menyediakan cara yang sepenuhnya otomatis untuk mengalihkan lalu lintas internet dari sebuah VPS di luar negeri (**VPS-LN**) melalui VPS yang berlokasi di Indonesia (**VPS-ID**). Hasilnya, semua koneksi yang keluar dari VPS-LN akan terlihat menggunakan alamat IP publik milik VPS-ID.
-
-Proses ini diotomatiskan melalui sebuah skrip menu interaktif (`setup.sh`).
+**Diuji dengan WireGuard + policy routing asli di lab network-namespace (bukan simulasi) — 14/14 uji lulus.**
 
 ---
 
-## Perintah Eksekusi Cepat
+## Fitur
 
-Ikuti langkah-langkah ini di **kedua** VPS Anda (Indonesia dan Luar Negeri).
+| Fitur | Keterangan |
+|---|---|
+| **Full mode** | Semua egress via VPS-ID + *SSH tetap aman* (reply dari IP asli VPS tetap keluar direct, sesi SSH masuk tidak putus) |
+| **Split mode** | Hanya port tertentu (source port) yang lewat VPS-ID — mis. port proxy 20001-20005 egress-nya jadi IP VPS-ID, sisanya (apt, SSH, lainnya) tetap direct |
+| **Killswitch** | Tunnel mati = egress diblok (blackhole), **tidak jatuh/bocor ke IP asli** — port non-split tetap jalan normal di split mode |
+| **Watchdog** | Timer systemd tiap 60 detik: tunnel down → auto failover ke direct; tunnel pulih → auto sambung kembali |
+| **Status lengkap** | Mode, port, killswitch, watchdog, umur handshake, probe tunnel, daftar rule aktif |
+| **Instal 1 perintah** | `curl … \| bash` |
 
-**Langkah 1: Unduh Skrip dari Repositori**
+---
 
-Anda perlu menyalin (clone) repositori ini ke dalam VPS Anda.
+## Instal 1 Perintah
 
-a. **Salin URL Repositori:**
-   Di halaman web repositori ini, klik tombol hijau bertuliskan **`< > Code`**. Salin URL HTTPS yang muncul. Tampilannya akan seperti `https://github.com/nama-pengguna/nama-repositori.git`.
-
-b. **Jalankan Perintah `git clone`:**
-   Ganti `URL_YANG_ANDA_SALIN` dengan URL yang baru saja Anda salin, lalu jalankan di terminal VPS Anda.
-   ```bash
-   git clone https://github.com/Nizwarax/proxy.git
-   ```
-
-c. **Masuk ke Direktori:**
-   Setelah selesai, sebuah direktori baru akan dibuat. Gunakan perintah `ls` untuk melihat namanya, lalu masuk ke direktori tersebut.
-   ```bash
-   # Gunakan 'ls' untuk melihat nama direktori baru
-   ls
-
-   # Ganti NAMA_DIREKTORI dengan nama yang muncul dari perintah ls
-   cd proxy
-   ```
-
-**Langkah 2: Jalankan Skrip**
-
-Setelah berada di dalam direktori yang benar, jalankan skrip dengan perintah di bawah ini. Anda harus menggunakan `sudo` karena skrip ini akan melakukan perubahan pada sistem.
+Jalankan di **kedua** VPS:
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/Nizwarax/proxy/main/install.sh | bash
+```
+
+Menu muncul otomatis. Non-interaktif:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Nizwarax/proxy/main/install.sh | bash -s -- --server
+curl -fsSL https://raw.githubusercontent.com/Nizwarax/proxy/main/install.sh | bash -s -- --client
+```
+
+## Cara Lama (git clone)
+
+```bash
+git clone https://github.com/Nizwarax/proxy.git && cd proxy
 sudo ./setup.sh
 ```
-Skrip akan menampilkan menu. Ikuti alur kerja di bawah ini.
 
 ---
 
-## Alur Kerja Detail
+## Alur Kerja
 
-### Di VPS Indonesia (Server)
+### VPS-ID (server)
+1. Jalankan installer → pilih **1 (Server)**.
+2. WireGuard terpasang otomatis (`wireguard-installer.sh --auto`), forwarding IP diaktifkan persist.
+3. Salin `client.conf` yang ditampilkan.
 
-1.  Jalankan `sudo ./setup.sh`.
-2.  Pilih opsi **1** untuk **Konfigurasi sebagai Server**.
-3.  Skrip akan menginstal server WireGuard secara otomatis.
-4.  Setelah selesai, skrip akan menampilkan isi dari `client.conf`. **Salin dan simpan seluruh konfigurasi ini.** Anda akan membutuhkannya untuk VPS Luar Negeri.
-
-### Di VPS Luar Negeri (Klien)
-
-1.  Jalankan `sudo ./setup.sh`.
-2.  Pilih opsi **2** untuk **Konfigurasi sebagai Klien**.
-3.  Skrip akan menginstal paket WireGuard.
-4.  Selanjutnya, skrip akan meminta Anda untuk menempelkan (paste) konfigurasi `client.conf` yang Anda dapatkan dari VPS Indonesia.
-5.  Tempelkan konfigurasi tersebut, lalu tekan `CTRL+D`.
-6.  Skrip akan menyelesaikan sisanya secara otomatis dan mengaktifkan koneksi.
+### VPS-LN (klien)
+1. Jalankan installer → pilih **2 (Klien)** → paste `client.conf` (akhiri baris `END`), atau beri path/URL file.
+2. Router otomatis: validasi config → injek `Table = off` → `wg-quick up` → pasang policy routing → **full mode aktif**.
 
 ### Verifikasi
+```bash
+wgrouter status        # tunnel, handshake, probe, rules
+curl -s ifconfig.me    # harus menampilkan IP VPS-ID (full mode)
+```
 
-Setelah konfigurasi klien selesai, skrip akan secara otomatis menampilkan alamat IP publik baru Anda. Jika alamat IP yang ditampilkan adalah milik **VPS Indonesia**, maka setup Anda telah berhasil.
+---
 
-## Catatan Penting
+## Contoh Pemakaian Harian
 
-*   Skrip ini perlu dijalankan dengan hak akses `root` atau `sudo`.
-*   File `setup.sh` dan `wireguard-installer.sh` harus berada di direktori yang sama saat dijalankan.
+```bash
+# split mode: hanya port 20001-20005 yang egress-nya IP VPS-ID
+wgrouter mode split
+wgrouter port add 20001 20002 20003 20004 20005
+
+# proteksi bocor: kalau tunnel mati, port ter-mark diblok (bukan pakai IP asli)
+wgrouter killswitch on
+
+# auto failover + reconnect
+wgrouter watchdog on
+
+# lihat semua
+wgrouter status
+```
+
+## Perintah Lengkap
+
+```
+wgrouter server                  Setup VPS ini sebagai server (VPS-ID)
+wgrouter client [file|URL]       Setup VPS ini sebagai klien (VPS-LN)
+wgrouter status                  Status lengkap tunnel + routing
+wgrouter on | off                Nyalakan / matikan routing via tunnel
+wgrouter mode full|split         Ganti mode routing
+wgrouter port add|del <PORT...>  Kelola port split-routing
+wgrouter killswitch on|off       Blok egress saat tunnel mati
+wgrouter watchdog on|off         Auto-failover systemd timer (60s)
+wgrouter test                    Diagnostik
+wgrouter uninstall               Bersihkan semua (config di-backup)
+```
+
+---
+
+## Catatan Teknis
+
+- Klien memakai **`Table = off`** + policy routing sendiri (bukan default `wg-quick`), sehingga:
+  - Reply dari IP asli VPS-LN (SSH masuk) tetap direct — sesi SSH tidak putus saat full mode.
+  - UDP WireGuard sendiri di-`fwmark` + host-route endpoint → **tidak terjadi recursive routing**.
+- Split mode memakai mark `iptables mangle` + rule `fwmark` + **MASQUERADE via wg0** — aplikasi yang bind source-port tetap benar (inner-src dipaksa ke IP tunnel, tidak ditolak allowed-ips server).
+- Watchdog menyimpan flag failover sehingga tidak menimpa keputusan manual `off` kamu.
+- Teruji di lab (netns + WireGuard asli): full-tunnel MASQ, preserve-SSH, split per-port, killswitch anti-bocor, watchdog failover & auto-reconnect — 14/14 PASS.
+
+## Lisensi
+
+MIT — `wireguard-installer.sh` berdasarkan karya [hwdsl2/wireguard-install](https://github.com/hwdsl2/wireguard-install) (Nyr & contributors).
